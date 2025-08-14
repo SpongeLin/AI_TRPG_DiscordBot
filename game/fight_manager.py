@@ -74,20 +74,20 @@ class FightManager:
     def enter_message(self, user_id, message):
         print(f"user_id: {user_id}, message: {message}")
         
-    async def roll_dice(self, ctx, message):
+    async def roll_dice(self, ctx, message, isToolReturn: bool = False):
         
         tools_declaration = [
             {
                 "function_declarations": [
                     {
                         "name": "perform_d100_check",
-                        "description": "Performs a 100-sided die (d100) check against a given success rate. Critically, a roll of 1 is always a 'Critical Failure' and a roll of 100 is a 'Critical Success', overriding the standard success rate. The tool returns a JSON object containing the detailed die roll and the final check status.",
+                        "description": "Performs a 100-sided die (d100) check against a given success rate. If the user does not provide a specific success rate and asks the AI to decide, you MUST invent a plausible success rate based on the story's context before calling this function. Then, call the function with the rate you decided on.",
                         "parameters": {
                             "type": "OBJECT",
                             "properties": {
                                 "success_rate": {
                                     "type": "NUMBER",
-                                    "description": "An integer between 1 and 100 representing the probability of success. This rate is applied only when the die roll is not 1 or 100."
+                                    "description": "An integer between 1 and 100 representing the probability of success. If the user does not specify this value, you are responsible for determining a reasonable value based on the narrative context (e.g., a skilled hero has a higher rate, a difficult task has a lower rate)."
                                 }
                             },
                             "required": ["success_rate"]
@@ -100,10 +100,14 @@ class FightManager:
         req = ChatRequest(
             prompt=message,
             session_id="fixed_003",
-            system_prompt="請全程使用中文輸出模型內容。",
-            tools_declaration=tools_declaration
+            system_prompt="請全程使用中文輸出模型內容。你是一位經驗豐富的TRPG遊戲主持人(GM)。當玩家的行動需要透過工具(Function)進行技能檢定，但玩家沒有提供具體的數值(例如成功率)時，你有責任和權力根據當前的故事情境，主動為玩家設定一個合理的數值，然後直接使用該工具來推動故事發展。不要向玩家詢問數值，要自信地做出決定。",
+            tools_declaration=tools_declaration,
+            toolReturn=isToolReturn,
+            function_name = "perform_d100_check"
         )
+        
         resp = await google_request(req)
+
         print(f"模型回傳: {resp}")
         
         func_call = resp.get("function_call")
@@ -111,7 +115,7 @@ class FightManager:
             result = call_tool(func_call["function_name"], func_call["function_args"])
             print(f"function_call結果: {result}")
             await ctx.send(result)
-            await self.roll_dice(ctx, result)
+            await self.roll_dice(ctx, result, True)
             return
         
         text = resp.get("text") or ""

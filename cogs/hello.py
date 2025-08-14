@@ -1,5 +1,6 @@
 from discord.ext import commands
 import json
+from typing import Optional
 
 from request.google_chat import google_request
 from request.model import ChatRequest
@@ -13,7 +14,7 @@ class Hello(commands.Cog):
         await ctx.send('Hello!')
         
     @commands.command()
-    async def chat(self, ctx, *, message: str | None = None):
+    async def chat(self, ctx, *, message: Optional[str] = None):
         if not message:
             await ctx.send('用法: $chat 你的訊息')
             return

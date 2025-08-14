@@ -7,6 +7,8 @@ class ChatRequest(BaseModel):
     max_output_tokens: Optional[int] = 1024
     temperature: Optional[float] = 0.7
 
+    toolReturn: Optional[bool] = False
+
     # New optional fields
     session_id: Optional[str] = None
     use_history: Optional[bool] = True
@@ -15,3 +17,4 @@ class ChatRequest(BaseModel):
     return_raw: Optional[bool] = False
     clear_session: Optional[bool] = False
     tools_declaration: Optional[object] = None
+    function_name: Optional[str] = None
