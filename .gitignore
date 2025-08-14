@@ -1,0 +1,71 @@
+# OS / Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Python bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+.cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Logs
+*.log
+logs/
+
+# Tests / coverage
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Linters / type checkers
+.mypy_cache/
+.pyre/
+.pylint.d/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Env & secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.crt
+*.p12
+
+# Local configs (do not commit)
+*.local.*
+config.local.*
+request/config_local.py
+
+# Databases
+*.sqlite3
+*.db
+
+# Common Google API tokens (if used)
+token.json
+credentials.json
+
+
