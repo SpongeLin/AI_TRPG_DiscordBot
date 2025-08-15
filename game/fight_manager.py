@@ -3,16 +3,54 @@ import random
 from typing import Any, Callable, Dict
 import inspect
 import json
+import os
+from pathlib import Path
+from functools import lru_cache
+
+from request.logger_setup import logger
+from game.function_declarations import tools_declaration
 
 from request.google_chat import google_request
 from request.model import ChatRequest
+
+#@lru_cache(maxsize=1)
+def read_system_prompt() -> str:
+    """Read system prompt text with robust path resolution and caching.
+
+    Resolution order:
+    1) Env var `SYSTEM_PROMPT_PATH` (absolute or relative to project root)
+    2) Default: `<project_root>/prompt/desription.txt`
+    """
+    try:
+        project_root = Path(__file__).resolve().parent.parent
+        env_path = os.getenv("SYSTEM_PROMPT_PATH")
+
+        if env_path:
+            candidate_path = Path(env_path)
+            if not candidate_path.is_absolute():
+                candidate_path = project_root / candidate_path
+        else:
+            candidate_path = project_root / "prompt" / "description.txt"
+
+        content = candidate_path.read_text(encoding="utf-8")
+        if not content.strip():
+            logger.warning("System prompt file is empty: %s", candidate_path)
+        else:
+            logger.info("Loaded system prompt from: %s", candidate_path)
+        return content
+    except FileNotFoundError:
+        logger.error("System prompt file not found. Set SYSTEM_PROMPT_PATH or ensure default exists at 'prompt/desription.txt'.")
+        return ""
+    except Exception as exc:
+        logger.exception("Failed to read system prompt: %s", exc)
+        return ""
 
 def perform_d100_check(success_rate: int) -> str:
     """
     Performs a D100 check, including rules for critical success and failure.
 
-    - A roll of 1 is a 'Critical Failure'.
-    - A roll of 100 is a 'Critical Success'.
+    - A roll of 1 is a 'Critical Success'.
+    - A roll of 100 is a 'Critical Failure'.
     - Otherwise, the result is determined by the success_rate.
 
     Args:
@@ -29,11 +67,11 @@ def perform_d100_check(success_rate: int) -> str:
     roll_result = random.randint(1, 100)
     status = ""
 
-    # Priority check for critical failure and success
+    # Priority check for critical success and failure
     if roll_result == 1:
-        status = "Critical Failure"
-    elif roll_result == 100:
         status = "Critical Success"
+    elif roll_result == 100:
+        status = "Critical Failure"
     # Standard check if not a critical roll
     elif roll_result <= success_rate:
         status = "Success"
@@ -74,33 +112,11 @@ class FightManager:
     def enter_message(self, user_id, message):
         print(f"user_id: {user_id}, message: {message}")
         
-    async def roll_dice(self, ctx, message, isToolReturn: bool = False):
-        
-        tools_declaration = [
-            {
-                "function_declarations": [
-                    {
-                        "name": "perform_d100_check",
-                        "description": "Performs a 100-sided die (d100) check against a given success rate. If the user does not provide a specific success rate and asks the AI to decide, you MUST invent a plausible success rate based on the story's context before calling this function. Then, call the function with the rate you decided on.",
-                        "parameters": {
-                            "type": "OBJECT",
-                            "properties": {
-                                "success_rate": {
-                                    "type": "NUMBER",
-                                    "description": "An integer between 1 and 100 representing the probability of success. If the user does not specify this value, you are responsible for determining a reasonable value based on the narrative context (e.g., a skilled hero has a higher rate, a difficult task has a lower rate)."
-                                }
-                            },
-                            "required": ["success_rate"]
-                        }
-                    }
-                ]
-            }
-        ]
-        
+    async def roll_dice(self, ctx, message, isToolReturn: bool = False):        
         req = ChatRequest(
             prompt=message,
             session_id="fixed_003",
-            system_prompt="請全程使用中文輸出模型內容。你是一位經驗豐富的TRPG遊戲主持人(GM)。當玩家的行動需要透過工具(Function)進行技能檢定，但玩家沒有提供具體的數值(例如成功率)時，你有責任和權力根據當前的故事情境，主動為玩家設定一個合理的數值，然後直接使用該工具來推動故事發展。不要向玩家詢問數值，要自信地做出決定。",
+            system_prompt=read_system_prompt(),
             tools_declaration=tools_declaration,
             toolReturn=isToolReturn,
             function_name = "perform_d100_check"

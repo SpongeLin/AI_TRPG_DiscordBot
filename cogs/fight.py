@@ -10,7 +10,7 @@ class Fight(commands.Cog):
         self.bot = bot
         
     @commands.command()
-    async def roll(self, ctx, *, message: Optional[str] = None):
+    async def R(self, ctx, *, message: Optional[str] = None):
         if not message:
             await ctx.send('用法: $roll 你的訊息')
             return
