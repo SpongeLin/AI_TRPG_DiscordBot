@@ -15,7 +15,7 @@ class Fight(commands.Cog):
             await ctx.send('用法: $roll 你的訊息')
             return
         
-        await fight_manager.roll_dice(ctx, message)
+        await fight_manager.send_message(ctx, message)
 
     @commands.command()
     async def f1(self, ctx, *, message: Optional[str] = None):

@@ -162,7 +162,7 @@ async def google_request(req: ChatRequest):
     body: Dict[str, Any] = {
         "contents": contents,
         "generationConfig": {
-            "maxOutputTokens": int(req.max_output_tokens or 1024),
+            "maxOutputTokens": int(req.max_output_tokens),
             "temperature": float(req.temperature or 0.7),
         },
         "safetySettings": UNCENSORED_CATEGORIES
