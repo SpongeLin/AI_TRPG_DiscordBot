@@ -4,7 +4,7 @@ from typing import Optional
 class ChatRequest(BaseModel):
     prompt: str
     model: Optional[str] = None
-    max_output_tokens: Optional[int] = 10240
+    max_output_tokens: Optional[int] = 12800
     temperature: Optional[float] = 0.7
 
     toolReturn: Optional[bool] = False

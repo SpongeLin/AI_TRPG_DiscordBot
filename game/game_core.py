@@ -1,6 +1,4 @@
-from game.func_tool import perform_d100_check, read_system_prompt, send_to_google_ai
-from request.google_chat import google_request
-from request.model import ChatRequest
+from game.func_tool import perform_d100_check, send_to_google_ai
 import re
 import asyncio
 from typing import Dict, Set
@@ -33,12 +31,16 @@ class GameCore:
             resp = await send_to_google_ai(message, session_id)
             text = resp.get("text") or ""
             
-            command_result = self.parse_command_result(text)
+            command_results = self.parse_command_results(text)
             text = self.remove_command_text(text)
             await ctx.send(f"{text}" or "ai say nothing")
 
-            if command_result:
-                await game_core.process_command(ctx, command_result["func"], command_result["args"])
+            if command_results:
+                for cmd in command_results:
+                    await game_core.process_command(ctx, cmd["func"], cmd["args"])
+        except Exception as e:
+            print(f"send_message 發生錯誤: {e}")
+            await ctx.send(f"發生錯誤: {e}")
         finally:
             await self._unregister_session(session_id)
         
@@ -49,6 +51,16 @@ class GameCore:
             args = m.group(2).strip()
             return {"func": func, "args": args}
         return None
+
+    def parse_command_results(self, text: str):
+        results = []
+        if not text:
+            return results
+        for m in self.COMMAND_PATTERN.finditer(text):
+            func = m.group(1)
+            args = m.group(2).strip()
+            results.append({"func": func, "args": args})
+        return results
     
     def remove_command_text(self, text: str) -> str:
         return self.COMMAND_PATTERN.sub("", text)
@@ -64,7 +76,18 @@ class GameCore:
             await ctx.send(f"發現擲骰指令，但未使用DICE")
     
     async def dice(self, ctx, args: str):
-        dice_message = perform_d100_check(int(args))
+        try:
+            rate = int(args)
+        except Exception:
+            print(f"DICE 指令錯誤, {args}")
+            await ctx.send(f"DICE 指令錯誤, {args}")
+            return
+        if not 1 <= rate <= 100:
+            print(f"DICE 參數需要1到100, {args}")
+            await ctx.send(f"DICE 參數需要1到100, {args}")
+            return
+        
+        dice_message = perform_d100_check(rate)
         print(f"D100檢定結果: {dice_message}")
         
         await ctx.send(dice_message)

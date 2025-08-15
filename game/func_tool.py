@@ -47,7 +47,6 @@ async def send_to_google_ai(message, session_id):
     )
     
     resp = await google_request(req)
-    print(f"模型回傳: {resp}")
     return resp
 
 def perform_d100_check(success_rate: int) -> str:

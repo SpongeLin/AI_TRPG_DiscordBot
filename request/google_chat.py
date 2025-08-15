@@ -189,9 +189,13 @@ async def google_request(req: ChatRequest):
         raise Exception(r.text)
 
     data = r.json()
+    print(f"google_chat 回傳: {data}")
     
     func_call = detect_tools_declaration(data)
     text = _extract_text_from_gl_response(data)
+    
+    if text == "":
+        raise Exception("語言模型 回傳空字串")
 
     # 4. 儲存模型的回應 (可能是文字或 function call)
     if req.session_id:
