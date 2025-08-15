@@ -1,8 +1,7 @@
 from discord.ext import commands
-from request.google_chat import google_request
-from request.model import ChatRequest
-from game.fight_manager import fight_manager
 from typing import Optional
+
+from game.game_core import game_core
 
 
 class Fight(commands.Cog):
@@ -15,7 +14,7 @@ class Fight(commands.Cog):
             await ctx.send('用法: $roll 你的訊息')
             return
         
-        await fight_manager.send_message(ctx, message)
+        await game_core.send_message(ctx, message)
 
     @commands.command()
     async def f1(self, ctx, *, message: Optional[str] = None):
@@ -23,7 +22,7 @@ class Fight(commands.Cog):
             await ctx.send('用法: $fight 你的訊息')
             return
         
-        fight_manager.enter_message("001", message)
+        game_core.enter_message("001", message)
         #fight_manager.enter_message(ctx.author.id, message)
 
     @commands.command()
@@ -32,7 +31,7 @@ class Fight(commands.Cog):
             await ctx.send('用法: $fight 你的訊息')
             return
         
-        fight_manager.enter_message("002", message)
+        game_core.enter_message("002", message)
         #fight_manager.enter_message(ctx.author.id, message)
 
 async def setup(bot):

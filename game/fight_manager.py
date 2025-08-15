@@ -1,63 +1,35 @@
-from typing import Any, Callable, Dict
-import inspect
-import json
-import os
-from pathlib import Path
 
-import re
 
-from game.game_core import game_core
-from request.logger_setup import logger
-from game.func_tool import perform_d100_check, send_to_google_ai
+from ast import Dict
 
-TOOL_REGISTRY: Dict[str, Callable[..., Any]] = {
-    "perform_d100_check": perform_d100_check,
-}
 
-def call_tool(function_name: str, function_args: Dict[str, Any]) -> Any:
-    func = TOOL_REGISTRY.get(function_name)
-    if func is None:
-        print(f"Unknown tool: {function_name}")
-        return None
-
-    # 可選：過濾多餘參數，避免 TypeError
-    params = inspect.signature(func).parameters
-    safe_args = {k: v for k, v in function_args.items() if k in params}
-
-    return func(**safe_args)
+class Character:
+    def __init__(self, name: str, hp: int):
+        self.name = name
+        self.hp = hp
+        self.max_hp = hp
 
 class FightManager:
-    # 預編譯的指令樣式正則，避免每次呼叫重編譯
-    COMMAND_PATTERN = re.compile(r"☆([A-Za-z_][A-Za-z0-9_]*)\:\{([^}]*)\}☆")
     def __init__(self):
-        self.fight_list = []
-        
-        
-    def enter_message(self, user_id, message):
-        print(f"user_id: {user_id}, message: {message}")
-        
-    async def send_message(self, ctx, message, session_id):        
-        resp = await send_to_google_ai(message, session_id)
-        text = resp.get("text") or ""
-        
-        command_result = self.parse_command_result(text)
-        text = self.remove_command_text(text)
-        print(f"text: {text}")
-        await ctx.send(f"{text}" or "ai say nothing")
-
-        if command_result:
-            await game_core.process_command(ctx, command_result["func"], command_result["args"])
-        
-    def parse_command_result(self, text: str) -> Dict[str, str]:
-        m = self.COMMAND_PATTERN.search(text)
-        if m:
-            func = m.group(1)
-            args = m.group(2).strip()
-            return {"func": func, "args": args}
-        return None
+        self.character_list : list[Character] = []
+        pass
     
-    def remove_command_text(self, text: str) -> str:
-        return self.COMMAND_PATTERN.sub("", text)
+    def damage(self, target: str, damage: int) -> Dict[str, str]:
+        for character in self.character_list:
+            if character.name == target:
+                character.hp -= damage
+                if character.hp <= 0:
+                    return {"status": "dead", "result": f"{target} 死亡"}
+                return {"status": "damage", "result": f"{target} 受到 {damage} 點傷害，剩餘血量 {character.hp}"}
+        return {"status": "not_found", "result": f"{target} 不存在"}
+    
+    def get_character_status(self) -> str:
+        status = ""
+        for character in self.character_list:
+            status += f"{character.name} 血量: {character.hp}/{character.max_hp}\n"
+        return status
+    
+        
     
 fight_manager = FightManager()
 
